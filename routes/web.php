@@ -3,14 +3,27 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MikroTikController;
 use App\Http\Controllers\OltDeviceController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-// Auth Routes
-Route::get('/', [AuthController::class, 'showLoginForm'])->name('login');
+// Authentication Routes
+
+Route::get('/', function () {
+    // If the user is logged in, redirect to the appropriate dashboard
+    if (Auth::check()) {
+        if (Auth::user()->is_admin) {
+            return redirect()->route('admin.dashboard');
+        }
+        return redirect()->route('user.dashboard');
+    }
+    // If not logged in, show the login page
+    return redirect()->route('login');
+});
+Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// Admin Routes (auth middleware applied)
+// Admin Routes (protected by auth middleware)
 Route::middleware(['auth'])->group(function () {
     // Admin Dashboard
     Route::get('/admin/dashboard', [AuthController::class, 'dashboard'])->name('admin.dashboard');
@@ -25,6 +38,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin/mikrotik/userstats/{deviceId}', [MikroTikController::class, 'showUserStats'])->name('admin.mikrotik.userstats');
 
     // OLT Device Routes
+//    Route::get('/admin/olt/devices/{deviceId}', [OltDeviceController::class, 'showOltStats'])->name('admin.olt.device.stats');
+
     Route::get('/admin/olt/devices', [OltDeviceController::class, 'showDevices'])->name('admin.olt.devices');
     Route::get('/admin/olt/device/add', [OltDeviceController::class, 'addDeviceForm'])->name('admin.olt.device.add');
     Route::post('/admin/olt/device/add', [OltDeviceController::class, 'addDevice'])->name('admin.olt.device.store');

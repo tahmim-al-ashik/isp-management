@@ -3,8 +3,18 @@
 @section('content')
     <div class="container">
         <h1>Add OLT Device</h1>
-
+        @if ($errors->any())
+            <div class="alert alert-danger">
+                <ul>
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
         <form action="{{ route('admin.olt.device.store') }}" method="POST">
+
+
             @csrf
             <div class="form-group">
                 <label for="name">Device Name</label>

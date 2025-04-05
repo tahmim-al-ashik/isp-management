@@ -3,24 +3,41 @@
 namespace App\Http\Controllers;
 
 use App\Models\OltDevice;
+use App\Services\OltDeviceService;
 use Illuminate\Http\Request;
 
 class OltDeviceController extends Controller
 {
-    // Show all OLT devices
     public function showDevices()
     {
         $oltDevices = OltDevice::all();  // Get all OLT devices from the database
         return view('admin.olt_devices', compact('oltDevices'));
     }
-    public function addDeviceForm()
+
+    // Show OLT stats
+    public function showOltStats($deviceId)
     {
-        return view('admin.add_olt_device'); // This is the form to add an OLT device
+        // Get the OLT device by ID
+        $oltDevice = OltDevice::findOrFail($deviceId);
+
+        // Instantiate the OltDeviceService to interact with the OLT API
+        $oltService = new OltDeviceService(
+            $oltDevice->api_url,
+            $oltDevice->username,
+            $oltDevice->password
+        );
+
+        // Fetch OLT stats
+        $stats = $oltService->getStats();
+
+        // Pass stats to the view
+        return view('admin.olt_stats', compact('oltDevice', 'stats'));
     }
-    // Add a new OLT device
+
+    // Add OLT Device
     public function addDevice(Request $request)
     {
-        // Validate form input
+        // Validate the form input
         $request->validate([
             'name' => 'required',
             'ip_address' => 'required|ip',
@@ -30,28 +47,15 @@ class OltDeviceController extends Controller
         ]);
 
         // Create new OLT device in the database
-        OltDevice::create([
-            'name' => $request->name,
-            'ip_address' => $request->ip_address,
-            'api_url' => $request->api_url,
-            'username' => $request->username,
-            'password' => $request->password,
-        ]);
+        OltDevice::create($request->all());
 
         // Redirect to the devices page
-        return redirect()->route('admin.olt.devices')->with('success', 'OLT Device added successfully');
+        return redirect()->route('admin.olt.devices');
     }
-
-    // Show a specific OLT device details (usage/reports)
-    public function showOltStats($deviceId)
+    public function addDeviceForm()
     {
-        $oltDevice = OltDevice::findOrFail($deviceId);
-
-        // You can implement further logic here to interact with the OLT device via its API
-        // For now, we'll just pass the device info to the view
-        return view('admin.olt_stats', compact('oltDevice'));
+        return view('admin.add_olt_device'); // This is the form to add an OLT device
     }
-
     // Edit OLT device
     public function editDevice($deviceId)
     {
